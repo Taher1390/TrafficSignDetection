@@ -10,12 +10,13 @@ session = ort.InferenceSession("traffic_sign.onnx")
 input_name = session.get_inputs()[0].name
 output_name = session.get_outputs()[0].name
 
-keys = {'stop': 0, 'straight': 1, 'left': 2, 'right': 3}
+keys = ['stop', 'straight', 'left', 'right']
 
 while True:
     ret, frame = cap.read()
     hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    min_pixels = 10000
+    is_traffic_sign = False
+    min_pixels = 6000
     
     lower_red1 = np.array([0, 100, 100])
     upper_red1 = np.array([10, 255, 255])
@@ -51,8 +52,15 @@ while True:
                     crop = np.expand_dims(cv2.resize(crop, (128, 128)).astype(np.float32) / 255.0, axis=0)
                     
                     if crop.shape[0] > 0 and crop.shape[1] > 0:
-                        result = session.run([output_name], {input_name: crop})
-                        print(result)
+                        result = list(session.run([output_name], {input_name: crop})[0][0])
+                        for prob in result:
+                            if prob > 0.8:
+                                is_traffic_sign = True
+                                break
+                        if is_traffic_sign:
+                            is_traffic_sign = False
+                            print(keys[result.index(max(result))])
+                        
     
     cv2.imshow('frame', frame)
     
