@@ -1,10 +1,16 @@
 import cv2
 import numpy as np
 import math
+import onnxruntime as ort
 import ultralytics
 
 cap = cv2.VideoCapture(0)
-model = ultralytics.YOLO(r'/media/taher/24288281288251AA/vs_code_files/khodran/best.pt')
+
+session = ort.InferenceSession("traffic_sign.onnx")
+input_name = session.get_inputs()[0].name
+output_name = session.get_outputs()[0].name
+
+keys = {'stop': 0, 'straight': 1, 'left': 2, 'right': 3}
 
 while True:
     ret, frame = cap.read()
@@ -37,18 +43,16 @@ while True:
             if M["m00"]:
                 area = cv2.contourArea(cnt)
                 if area >= min_pixels:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
+                    cx = abs(int(M["m10"] / M["m00"]))
+                    cy = abs(int(M["m01"] / M["m00"]))
                     r = int((area / math.pi) ** 0.5)
-                    crop = frame[int(cy - r - (0.4 * r)): int(cy + r + (0.4 * r)), int(cx - r - (0.4 * r)): int(cx + r + (0.4 * r))]
+                    w = 0.2
+                    crop = frame[int(cy - r - (w * r)): int(cy + r + (w * r)), int(cx - r - (w * r)): int(cx + r + (w * r))]
+                    crop = np.expand_dims(cv2.resize(crop, (128, 128)).astype(np.float32) / 255.0, axis=0)
+                    
                     if crop.shape[0] > 0 and crop.shape[1] > 0:
-                        results = model(crop, conf=0.5, device='cpu', imgsz=640)
-                        frame = results[0].plot()
-                        if len(results[0].boxes) > 0:
-                            cls = int(results[0].boxes[0].cls[0])
-                            label = results[0].names[cls]
-                            print(label)
-                            break
+                        result = session.run([output_name], {input_name: crop})
+                        print(result)
     
     cv2.imshow('frame', frame)
     
