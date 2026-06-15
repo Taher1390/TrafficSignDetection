@@ -8,8 +8,8 @@ while True:
     blur_img = cv2.blur(img, (7, 7))
     hsv_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2HSV)
 
-    trsign = TrafficSign(hsv_img, 5000)
-    print(trsign.sign)
+    tr_sign = TrafficSign(img, hsv_img)
+    print(tr_sign.traffic_sign)
     cv2.imshow('hsv img', img)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
