@@ -8,7 +8,7 @@ class TrafficSign:
     is_traffic_sign = False
     traffic_sign = None
     
-    def __init__(self, bgr_img, hsv_img, min_area = 6000, model_name = "traffic_sign.onnx"):
+    def __init__(self, bgr_img, hsv_img, min_area = 4000, model_name = "traffic_sign.onnx"):
         self.hsv_img = hsv_img
         self.bgr_img = bgr_img
         self.min_area = min_area
