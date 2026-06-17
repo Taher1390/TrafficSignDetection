@@ -4,7 +4,7 @@ import math
 import onnxruntime as ort
 
 class TrafficSign:
-    keys = ['stop', 'straight', 'left', 'right']
+    keys = ['stop', 'forward', 'left', 'right', 'no_entry', 'dead_end']
     is_traffic_sign = False
     traffic_sign = None
     
