@@ -6,9 +6,8 @@ cap = cv2.VideoCapture(0)
 while True:
     ret, img = cap.read()
     blur_img = cv2.blur(img, (7, 7))
-    hsv_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2HSV)
 
-    tr_sign = TrafficSign(img, hsv_img)
+    tr_sign = TrafficSign(img, blur_img, filter=0.9)
     print(tr_sign.traffic_sign)
     cv2.imshow('hsv img', img)
 

@@ -5,14 +5,18 @@ import onnxruntime as ort
 
 class TrafficSign:
     keys = ['stop', 'forward', 'left', 'right', 'no_entry', 'dead_end']
-    is_traffic_sign = False
     traffic_sign = None
     
-    def __init__(self, bgr_img, hsv_img, min_area = 4000, model_name = "traffic_sign.onnx"):
-        self.hsv_img = hsv_img
-        self.bgr_img = bgr_img
+    def __init__(self, img, blur_img, min_area = 4000, model_name = "traffic_sign.onnx", filter = 0.85, mode = 'bgr'):
+        if mode == 'bgr':
+            blur_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2RGB)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            
+        self.hsv_img = cv2.cvtColor(blur_img, cv2.COLOR_RGB2HSV)
+        self.img = img
         self.min_area = min_area
         self.model_name = model_name
+        self.filter = filter
         
         self.session = ort.InferenceSession(self.model_name)
         self.input_name = self.session.get_inputs()[0].name
@@ -48,17 +52,11 @@ class TrafficSign:
                         cy = abs(int(M["m01"] / M["m00"]))
                         r = int((self.area / math.pi) ** 0.5)
                         w = 0.2
-                        self.crop = self.bgr_img[int(cy - r - (w * r)): int(cy + r + (w * r)), int(cx - r - (w * r)): int(cx + r + (w * r))]
+                        self.crop = self.img[int(cy - r - (w * r)): int(cy + r + (w * r)), int(cx - r - (w * r)): int(cx + r + (w * r))]
                         
                         if self.crop.shape[0] > 0 and self.crop.shape[1] > 0:
                             self.crop = np.expand_dims(cv2.resize(self.crop, (128, 128)).astype(np.float32) / 255.0, axis=0)
                             self.result = list(self.session.run([self.output_name], {self.input_name: self.crop})[0][0])
-                            for prob in self.result:
-                                if prob > 0.8:
-                                    self.is_traffic_sign = True
-                                    break
-                            if self.is_traffic_sign:
-                                self.is_traffic_sign = False
-                                self.traffic_sign = self.keys[self.result.index(max(self.result))]
-                            else:
-                                self.traffic_sign = None   
+                            prob = max(self.result)
+                            if prob >= self.filter:
+                                self.traffic_sign = self.keys[self.result.index(prob)]
